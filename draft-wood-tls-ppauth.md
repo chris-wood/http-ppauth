@@ -47,14 +47,12 @@ Beyond PSKs and certificates, there exist other forms of authenticators that end
 may wish to use for TLS authentication. Privacy Pass is one form of authentication
 technology, which uses "anonymous credentials" as lightweight client authenticators.
 Privacy Pass authenticators are anonymous as they do not reveal any information about
-the client during the authentication phase.
+the client during the authentication phase. Therefore, these authenticators are not
+traditional PSKs, nor are they traditional certificates.
 
-Unfortunately, the "tls_cert_with_extern_psk" extension is limited to traditional external
-PSKs in TLS. draft-group-tls-extensible-psks specifies an extensible PSK format
-that may be used for introducing new types of PSKs with different properties. This
-document specifies one such PSK for lightweight client authentication based on Privacy Pass.
-
-[[TODO: should we also specify a way of using Privacy Pass authenticators with Exported Authenticators?]]
+This document specifies a new extension clients may use to redeem Privacy Pass authentication
+tokens. It also specifies a way of using Privacy Pass authenticators with Exported Authenticators
+{{!I-D.ietf-tls-exported-authenticators}} if encryption of these values is desired.
 
 ## Requirements
 
@@ -89,71 +87,163 @@ Cases where this functionality may be important are HTTPS CONNECT and CONNECT-UD
 these proxy servers may wish to restrict access to "previously authenticated" clients, rather than
 any client on the network.
 
-# Privacy Pass Client Authentication
+# Anonymous Token Extension
 
-This document specifies a new PSK type called "anonymous_token" using the "extended_psk" structure.
-The ExtendedPSKIdentity value of "anonymous_token" is as follows:
-
-~~~
-enum {
-    anonymous_token(TBD),
-    (255)
-} ExtendedPskIdentityType;
-~~~
-
-The structure of an "anonymous_token" PSK is as follows:
+This document specifies a new structure for carrying anonymous tokens called AnonymousToken,
+defined as follows:
 
 ~~~
 struct {
-  opaque data<1..2^32-1>;
-  opaque aux<1..2^16-1>;
+  select (Handshake.msg_type) {
+    case client_hello, certificate: {
+      opaque config<1..2^8-1>;
+      RedemptionMessage request;
+    }
+    case encrypted_extensions: {
+      RedemptionResponse response;
+    }
 } AnonymousToken;
 ~~~
 
-data
-: The input used by the server to verify the token.
+config
+: Identifier of the client's Privacy Pass ClientConfig structure.
 
-aux
-: Additional auxiliary data provided by the application protocol using this anonymous token.
+request
+: Client's Privacy Pass RedemptionRequest message.
 
-Clients use Privacy Pass RedemptionToken values to create AnonymousToken PSK identities and
-PSK values. Specifically, given a RedemptionToken `T` structure, additional auxiliary data `aux`,
-and a Privacy Pass client configuration `config`, clients first compute a ClientRedemptionRequest
+response
+: Server's Privacy Pass RedemptionResponse message.
+
+# Inline Privacy Pass Authentication
+
+Clients can use Privacy Pass authentication tokens by sending them to servers in
+an "anonymous_token" extension, defined as follows:
+
+~~~
+enum {
+  anonymous_token(0xff03), (65535)
+} ExtensionType;
+~~~
+
+The contents of this extension are a AnonymousToken structure. Clients use Privacy Pass
+RedemptionToken values to create AnonymousToken structures. Specifically, given a RedemptionToken
+`T`, additional auxiliary data `aux`, and a Privacy Pass client configuration `client_config`, clients
+first compute a ClientRedemptionRequest value `request` as follows:
+
+~~~
+request = Redeem(client_config, T, aux)
+~~~
+
+Then clients create an AnonymousToken value such that AnonymousToken.message contains `request`
+and AnonymousToken.config contains the identifier of `client_config`. In this document, the
+identifier of `client_config` is the SHA-256 digest of the ClientConfig structure.
+
+Upon receipt of a ClientHello with an AnonymousToken extension, servers verify it as follows.
+First, if AnonymousToken.config does not match a known server configuration, the server replies
+with an AnonymousToken extension in EncryptedExtensions with `success` field set to 0
+and empty `additional_data`.
+
+Otherwise, the server computes a RedemptionResponse message with the matching server config
+`server_config` as follows:
+
+~~~
+response = Verify(server_config, AnonymousToken.request)
+~~~
+
+The server then replies with an AnonymousToken extension in EncryptedExtensions carrying `response`.
+
+The server is said to accept the anonymous token if the value of the RedemptionResponse success
+field is 0x01.
+
+Similar to 0-RTT data, AnonymousToken values can be replayed both by clients and by on-path
+attackers. Servers SHOULD build mechanisms to prevent AnonymousToken replays. Servers MAY
+abort connections upon replay detection if desired for a given application use case or deployment.
+See {{sec-considerations}} for discussion about possible attacks on this behavior.
+
+# Privacy Pass Authentication with Exported Authenticators
+
+Clients can also authenticate using Privacy Pass with Exported Authenticators.
+This requires introduction of new "signature" scheme values, listed below:
+
+~~~
+enum {
+  sig_pp_p256_sha512(0x0A01),
+  sig_pp_p384_sha512(0x0A02),
+  sig_pp_p521_sha512(0x0A03),
+  sig_pp_x52219_sha512(0x0A04),
+  sig_pp_x448_sha512(0x0A05),
+} SignatureScheme;
+~~~
+
+Each of these correspond to the available Privacy Pass ciphersuites.
+We also define a new Certificate message type for Privacy Pass
+authentication, called AnonymousTokenAuthenticator, and defined below.
+
+~~~
+enum {
+  AnonymousTokenAuthenticator(TBD),
+  (255)
+} CertificateType;
+~~~
+
+Certificates of this type have CertificateEntry structures of the form:
+
+~~~
+struct {
+  Extension extensions<0..2^16-1>;
+} CertificateEntry;
+~~~
+
+Given a client with a RedemptionToken `T`, additional auxiliary data
+`aux`, and a Privacy Pass client configuration `config`, this mechanism
+works as follows.
+
+First, a server creates an Authenticator Request (CertificateRequest) with
+randomly generated `certificate_request_context`, empty
+"anonymous_token" extension, and "signature_algorithms" extension
+listing one or more of the SignatureScheme values defined in this
+document.
+
+Upon receipt of this request, a client first checks to see if the list
+of supported signature algorithms matches that in `config`. If not, the client
+replies with an Empty Authenticator as described in
+{{!I-D.ietf-tls-exported-authenticators}}. If there is a match, then
+the client creates an Authenticator response by first constructing a
+Certificate with an empty `certificate_list` and AnonymousTokenAuthenticator
+CertificateEntry. The CertificateEntry contains an AnonymousToken value
+such that AnonymousToken.data = T.data and AnonymousToken.aux = aux.
+
+The client then creates a CertificateVerify message with a SignatureScheme
+value that matches that of `config` and presented in the CertificateRequest.
+To produce the signature value, the client first computes a ClientRedemptionRequest
 value `request` as follows:
 
 ~~~
 request = Redeem(config, T, aux)
 ~~~
 
-Then clients create an AnonymousToken value such that AnonymousToken.data = RedemptionToken.data
-and AnonymousToken.aux = aux. The corresponding PSK K is set to request.tag. Clients use K to compute
-a binder as specified in {{!TLS13=RFC8446}}. Clients MUST also include the "tls_cert_with_extern_psk"
-extension in the ClientHello. Clients MUST NOT re-use a RedemptionToken in multiple ClientHello messages.
+Then, the client uses request.tag as an HMAC key to compute the signature
+over the input defined in {{!I-D.ietf-tls-exported-authenticators}}.
 
-Upon receipt of a ClientHello with an AnonymousToken PSK identity, a server does the following:
+Finally, the client produces a Finished message as described in
+{{!I-D.ietf-tls-exported-authenticators}}, and sends the entire
+Authenticator to the server.
 
-1. If the ClientHello does not also contain the "tls_cert_with_extern_psk" extension, abort
-the connection with an "invalid_parameter" alert.
-2. Otherwise, servers use the contents of AnonymousToken to reconstruct the PSK and verify
-the binder value as per 4.2.11. of {{!TLS13}}. If the binder fails to verify, the server
-MUST abort the handshake.
+Upon receipt, the server verifies the Authenticator by using the contents of
+the AnonymousToken CertificateEntry extension to reconstruct the HMAC key,
+verify the Authenticator CertificateVerify message signature, and then
+verify the Finished message. If any of these verification steps fail, the
+Authenticator is deemed invalid.
 
-[[OPEN ISSUE: What alert should the server return if the binder fails? The standard value?]]
-
-[[OPEN ISSUE: The PrivacyPass API currently doesn't one recompute the PSK given `data` and `aux`, so we
-need to modify it to permit that]]
-
-# Deployment Considerations
-
-[[TODO: double spend prevention state at the server]]
-
-[[TODO: token issuance out of band]]
+Support for Exported Authenticators is negotiated at the application
+layer. For example, this might be done with an HTTP/2 or HTTP/3 SETTINGS
+parameter.
 
 # IANA Considerations
 
-[[TODO]]
+[[TODO: list all new types allocated here]]
 
-# Security Considerations
+# Security Considerations {#sec-considerations}
 
 ## Authentication Guarantees
 
@@ -171,10 +261,14 @@ such as replacing the the KeyShare values, will cause the server binder check to
 
 Attackers may also use the cleartext `data` field of the AnonymousToken field to execute the issuance
 phase of the Privacy Pass protocol and derive the client's corresponding PSK. This does not compromise
-the target connection since servers must also authenticate to clients using a certificate.
+the target connection since servers must also authenticate to clients using a certificate. However,
+if the attacker can execute the issuance phase, derive the PSK, and then send its own ClientHello
+to the server. If servers abort connections upon detection of a double spend event, this may cause
+the legitimate client's connection to fail.
 
 Use of EncryptedClientHello {{!ECH=I-D.ietf-tls-esni}} can help deter these on-path attacks by encrypting
-the contents of the ClientHello under the server's public key.
+the contents of the ClientHello under the server's public key. Moreover, the Exported Authenticator
+authentication flow protects against this attack, albeit at the cost of additional round trip.
 
 # Acknowledgments
 
