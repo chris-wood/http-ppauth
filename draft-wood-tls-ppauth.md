@@ -52,7 +52,7 @@ traditional PSKs, nor are they traditional certificates.
 
 This document specifies a new extension clients may use to redeem Privacy Pass authentication
 tokens. It also specifies a way of using Privacy Pass authenticators with Exported Authenticators
-{{!I-D.ietf-tls-exported-authenticators}} if encryption of these values is desired.
+{{!I-D.ietf-tls-exported-authenticator}} if encryption of these values is desired.
 
 ## Requirements
 
@@ -207,7 +207,7 @@ document.
 Upon receipt of this request, a client first checks to see if the list
 of supported signature algorithms matches that in `config`. If not, the client
 replies with an Empty Authenticator as described in
-{{!I-D.ietf-tls-exported-authenticators}}. If there is a match, then
+{{!I-D.ietf-tls-exported-authenticator}}. If there is a match, then
 the client creates an Authenticator response by first constructing a
 Certificate with an empty `certificate_list` and AnonymousTokenAuthenticator
 CertificateEntry. The CertificateEntry contains an AnonymousToken value
@@ -223,10 +223,10 @@ request = Redeem(config, T, aux)
 ~~~
 
 Then, the client uses request.tag as an HMAC key to compute the signature
-over the input defined in {{!I-D.ietf-tls-exported-authenticators}}.
+over the input defined in {{!I-D.ietf-tls-exported-authenticator}}.
 
 Finally, the client produces a Finished message as described in
-{{!I-D.ietf-tls-exported-authenticators}}, and sends the entire
+{{!I-D.ietf-tls-exported-authenticator}}, and sends the entire
 Authenticator to the server.
 
 Upon receipt, the server verifies the Authenticator by using the contents of
