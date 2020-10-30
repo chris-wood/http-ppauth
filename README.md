@@ -4,15 +4,15 @@ This is the working area for individual Internet-Drafts.
 
 ## Privacy Pass Authentication for HTTP
 
-* [Editor's Copy](https://chris-wood.github.io/draft-wood-tls-ppauth/#go.draft-wood-httpbis-ppauth.html)
+* [Editor's Copy](https://chris-wood.github.io/http-ppauth/#go.draft-wood-httpbis-ppauth.html)
 * [Individual Draft](https://tools.ietf.org/html/draft-wood-httpbis-ppauth)
-* [Compare Editor's Copy to Individual Draft](https://chris-wood.github.io/draft-wood-tls-ppauth/#go.draft-wood-httpbis-ppauth.diff)
+* [Compare Editor's Copy to Individual Draft](https://chris-wood.github.io/http-ppauth/#go.draft-wood-httpbis-ppauth.diff)
 
 ## Privacy Pass Client Authentication for TLS
 
-* [Editor's Copy](https://chris-wood.github.io/draft-wood-tls-ppauth/#go.draft-wood-tls-ppauth.html)
+* [Editor's Copy](https://chris-wood.github.io/http-ppauth/#go.draft-wood-tls-ppauth.html)
 * [Individual Draft](https://tools.ietf.org/html/draft-wood-tls-ppauth)
-* [Compare Editor's Copy to Individual Draft](https://chris-wood.github.io/draft-wood-tls-ppauth/#go.draft-wood-tls-ppauth.diff)
+* [Compare Editor's Copy to Individual Draft](https://chris-wood.github.io/http-ppauth/#go.draft-wood-tls-ppauth.diff)
 
 ## Building the Draft
 
@@ -29,4 +29,4 @@ This requires that you have the necessary software installed.  See
 ## Contributing
 
 See the
-[guidelines for contributions](https://github.com/chris-wood/draft-wood-tls-ppauth/blob/master/CONTRIBUTING.md).
+[guidelines for contributions](https://github.com/chris-wood/http-ppauth/blob//CONTRIBUTING.md).
