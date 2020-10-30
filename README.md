@@ -1,4 +1,4 @@
-# HTTPBIS Drafts
+# PrivacyPass Authentication Drafts
 
 This is the working area for individual Internet-Drafts.
 
