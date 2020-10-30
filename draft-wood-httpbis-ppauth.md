@@ -82,19 +82,19 @@ Cases where this functionality may be important are HTTPS CONNECT and CONNECT-UD
 these proxy servers may wish to restrict access to "previously authenticated" clients, rather than
 any client on the network.
 
-# AnonymousToken Authentication
+# PrivacyPassToken Authentication
 
-This document specifies a new HTTP authentication scheme called "AnonymousToken". Servers may request
+This document specifies a new HTTP authentication scheme called "PrivacyPassToken". Servers may request
 clients to authenticate using an anonymous token by issuing a challenge (WWW-Authenticate or
 Proxy-Authenticate) with the following information:
 
-- The scheme name is "AnonymousToken".
+- The scheme name is "PrivacyPassToken".
 - The authentication parameter 'realm' is REQUIRED ({{!RFC7235}}, Section 2.2).
 - The authentication parameter 'pp-config' is REQUIRED. (Section {{config-param}}).
 - No other authentication parameters are defined -- unknown parameters MUST be ignored by
   recipients, and new parameters can only be defined by revising this specification.
 
-Clients use the contents of an "AnonymousToken" challenge to create an authorization response.
+Clients use the contents of an "PrivacyPassToken" challenge to create an authorization response.
 Specifically, given a RedemptionToken `T` matching the configuration identified by the challenge,
 and additional auxiliary data `aux`, clients first compute a ClientRedemptionRequest value
 `request` as follows:
@@ -107,14 +107,14 @@ request = Redeem(T, aux)
 to a base64-encoded string and provide it as the Authorization value:
 
 ~~~
-Proxy-Authorization: AnonymousToken <encoded-request>
+Proxy-Authorization: PrivacyPassToken <encoded-request>
 ~~~
 
 Clients MAY send the "Proxy-Authorization" header without a corresponding challenge.
 
 Clients MUST NOT re-use a given token `T` more than once across HTTP connections.
 
-## AnonymousToken Configuration Parameter {#config-param}
+## PrivacyPassToken Configuration Parameter {#config-param}
 
 In challenges, servers can use the 'pp-config' authentication parameter to indicate the
 Privacy Pass server configuration that clients should use in generating an Authorization
@@ -122,14 +122,14 @@ response. The value of this parameter is a base64-encoded `ServerUpdate` structu
 see {{I-D.davidson-pp-protocol}}.
 
 ~~~
-Proxy-Authenticate: AnonymousToken realm="MASQUE", pp-config="<encoded-config>"
+Proxy-Authenticate: PrivacyPassToken realm="MASQUE", pp-config="<encoded-config>"
 ~~~
 
 # IANA Considerations
 
 This document updates the Hypertext Transfer Protocol (HTTP) Authentication Scheme Registry as follows.
 
-- Authentication Scheme Name: AnonymousToken
+- Authentication Scheme Name: PrivacyPassToken
 - Reference: This document.
 
 # Security Considerations {#sec-considerations}
