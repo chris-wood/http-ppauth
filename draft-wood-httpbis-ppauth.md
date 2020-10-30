@@ -25,28 +25,29 @@ author:
 
 --- abstract
 
-This document describes a new HTTP authentication scheme based on Privacy Pass, 
-an anonymous authentication protocol. Clients may use Privacy Pass to obtain tokens, 
-or anonymous credentials, that may be used at most once as an authenticator. Issuance 
+This document describes new HTTP authentication mechanisms based on Privacy Pass,
+an anonymous authentication protocol. Clients may use Privacy Pass to obtain tokens,
+or anonymous credentials, that may be used at most once as an authenticator. Issuance
 of Privacy Pass tokens is outside the scope of this document.
 
 --- middle
 
 # Introduction
 
-The HTTP authentication header allows clients to authenticate itself to servers and proxies 
-{{!RFC7235}}. Current authentication schemes include Basic, Digest, and OAuth. 
-There is no anonymous authentication scheme currently defined. 
+The HTTP authentication header allows clients to authenticate requests to servers and proxies
+{{!RFC7235}}. Current authentication schemes include Basic, Digest, and OAuth.
+There is no anonymous authentication scheme currently defined.
 
-Privacy Pass an anonymous authentication protocol which uses "anonymous credentials" 
-as lightweight client authenticators. Privacy Pass authenticators are anonymous as 
-they do not reveal any information about the client during the authentication phase. 
+Privacy Pass an anonymous authentication protocol which uses "anonymous credentials"
+as lightweight client authenticators. Privacy Pass authenticators are anonymous as
+they do not reveal any information about the client during the authentication phase.
 Clients may use these authenticators to prove to a server that it had previously
 authenticated or engaged in a protocol to acquire an authenticator.
 
-This document specifies a new HTTP authentication scheme based on Privacy Pass.
-It updates the IANA Hypertext Transfer Protocol (HTTP) Authentication Scheme Registry
-this new scheme and its details.
+This document specifies a way by which clients may redeem Privacy Pass tokens to
+servers for HTTP requests. This mechanism uses a new HTTP authentication scheme
+based on Privacy Pass. It updates the IANA Hypertext Transfer Protocol (HTTP)
+Authentication Scheme Registry with this new scheme and its details.
 
 ## Requirements
 
@@ -71,10 +72,10 @@ we assume issuance is an offline protocol run out-of-band to prime clients with 
 
 ## Use Cases
 
-Traditional HTTP authentication schemes are useful if servers need strong assurance of the client's 
-identity. However, there are some use cases wherein servers may wish to perform a weaker check. 
-For example, consider a server that wishes to check whether any client from a set of previously 
-authenticated clients. Servers need only a way to check that the client was previously authenticated, 
+Traditional HTTP authentication schemes are useful if servers need strong assurance of the client's
+identity. However, there are some use cases wherein servers may wish to perform a weaker check.
+For example, consider a server that wishes to check whether any client from a set of previously
+authenticated clients. Servers need only a way to check that the client was previously authenticated,
 yet do not need to know any more information about the client.
 
 Cases where this functionality may be important are HTTPS CONNECT and CONNECT-UDP proxies. Specifically,
@@ -84,41 +85,43 @@ any client on the network.
 # AnonymousToken Authentication
 
 This document specifies a new HTTP authentication scheme called "AnonymousToken". Servers may request
-clients to authenticate using an anonymous token by issuing a challenge (WWW-Authenticate or Proxy-Authenticate) 
-with the following information:
+clients to authenticate using an anonymous token by issuing a challenge (WWW-Authenticate or
+Proxy-Authenticate) with the following information:
 
 - The scheme name is "AnonymousToken".
 - The authentication parameter 'realm' is REQUIRED ({{!RFC7235}}, Section 2.2).
 - The authentication parameter 'pp-config' is REQUIRED. (Section {{config-param}}).
-- No other authentication parameters are defined -- unknown parameters MUST be ignored by 
+- No other authentication parameters are defined -- unknown parameters MUST be ignored by
   recipients, and new parameters can only be defined by revising this specification.
 
 Clients use the contents of an "AnonymousToken" challenge to create an authorization response.
-Specifically, given a RedemptionToken `T` matching the configuration identified by the challenge, 
-additional auxiliary data `aux`, and a Privacy Pass client configuration `client_config`, clients
-first compute a ClientRedemptionRequest value `request` as follows:
+Specifically, given a RedemptionToken `T` matching the configuration identified by the challenge,
+and additional auxiliary data `aux`, clients first compute a ClientRedemptionRequest value
+`request` as follows:
 
 ~~~
-request = Redeem(client_config, T, aux)
+request = Redeem(T, aux)
 ~~~
 
 Clients then convert `request` to a base64-encoded string and provide it as the Authorization value:
 
 ~~~
-Proxy-Authorize: AnonymousToken <TODO>==
+Proxy-Authorization: AnonymousToken <encoded-request>
 ~~~
 
-Clients MUST NOT re-use a given token `T` more than once
+Clients MUST NOT re-use a given token `T` more than once.
+
+Clients MAY send the "Proxy-Authorization" header without a corresponding challenge.
 
 ## AnonymousToken Configuration Parameter {#config-param}
 
-In challenges, servers can use the 'pp-config' authentication parameter to indicate the 
-Privacy Pass server configuration that clients should use in generating an Authorization 
-response. The value of this parameter is a base64-encoded `ServerUpdate` structure; 
+In challenges, servers can use the 'pp-config' authentication parameter to indicate the
+Privacy Pass server configuration that clients should use in generating an Authorization
+response. The value of this parameter is a base64-encoded `ServerUpdate` structure;
 see {{I-D.davidson-pp-protocol}}.
 
 ~~~
-Proxy-Authenticate: AnonymousToken realm="MASQUE", pp-config="<TODO>=="
+Proxy-Authenticate: AnonymousToken realm="MASQUE", pp-config="<encoded-config>"
 ~~~
 
 # IANA Considerations
@@ -131,4 +134,4 @@ Proxy-Authenticate: AnonymousToken realm="MASQUE", pp-config="<TODO>=="
 
 # Acknowledgments
 
-This document was inspired by the work Privacy Pass and {{!I-D.sullivan-tls-anonymous-tickets}}.
+This document was inspired by the work Privacy Pass.
