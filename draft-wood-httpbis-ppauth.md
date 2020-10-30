@@ -103,15 +103,16 @@ and additional auxiliary data `aux`, clients first compute a ClientRedemptionReq
 request = Redeem(T, aux)
 ~~~
 
-Clients then convert `request` to a base64-encoded string and provide it as the Authorization value:
+`Redeem` is as specified in {{!I-D.davidson-pp-protocol}}. Clients then convert `request`
+to a base64-encoded string and provide it as the Authorization value:
 
 ~~~
 Proxy-Authorization: AnonymousToken <encoded-request>
 ~~~
 
-Clients MUST NOT re-use a given token `T` more than once.
-
 Clients MAY send the "Proxy-Authorization" header without a corresponding challenge.
+
+Clients MUST NOT re-use a given token `T` more than once across HTTP connections.
 
 ## AnonymousToken Configuration Parameter {#config-param}
 
@@ -126,11 +127,17 @@ Proxy-Authenticate: AnonymousToken realm="MASQUE", pp-config="<encoded-config>"
 
 # IANA Considerations
 
-[[TODO: indicate new registry value here]]
+This document updates the Hypertext Transfer Protocol (HTTP) Authentication Scheme Registry as follows.
+
+- Authentication Scheme Name: AnonymousToken
+- Reference: This document.
 
 # Security Considerations {#sec-considerations}
 
-[[TODO: discuss realms and token requests]]
+Privacy Pass tokens are designed to be unlinkable. Clients that spend tokens more than
+once across tokens forfeit this property. Clients that spend tokens more than once within
+the same connection may not forfeit this property, since servers can already link connection
+requests to the same client via other means.
 
 # Acknowledgments
 
