@@ -1,12 +1,12 @@
-# PrivacyPass Authentication Drafts
+# PRIVACYPASS Drafts
 
 This is the working area for individual Internet-Drafts.
 
 ## Privacy Pass Authentication for HTTP
 
-* [Editor's Copy](https://chris-wood.github.io/http-ppauth/#go.draft-wood-httpbis-ppauth.html)
-* [Individual Draft](https://tools.ietf.org/html/draft-wood-httpbis-ppauth)
-* [Compare Editor's Copy to Individual Draft](https://chris-wood.github.io/http-ppauth/#go.draft-wood-httpbis-ppauth.diff)
+* [Editor's Copy](https://chris-wood.github.io/http-ppauth/#go.draft-wood-privacypass-auth-header.html)
+* [Individual Draft](https://tools.ietf.org/html/draft-wood-privacypass-auth-header)
+* [Compare Editor's Copy to Individual Draft](https://chris-wood.github.io/http-ppauth/#go.draft-wood-privacypass-auth-header.diff)
 
 ## Privacy Pass Client Authentication for TLS
 
